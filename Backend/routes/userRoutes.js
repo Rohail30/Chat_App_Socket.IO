@@ -4,7 +4,7 @@ import { addUser, getAllUsers, getUserById } from "../controllers/userController
 const router = express.Router();
 
 router.post("/add", addUser);     
-router.get("/", getAllUsers);     
+router.get("/getAll", getAllUsers);     
 router.get("/:id", getUserById);  
 
 export default router;

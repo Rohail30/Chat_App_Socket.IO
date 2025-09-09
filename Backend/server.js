@@ -1,14 +1,19 @@
 import express from "express";
 import { connectDB } from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
+import cors from "cors";
 
 const app = express();
-app.use(express.json);
 
-connectDB();
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,              
+}));
 
-// Middleware
 app.use(express.json());
+
+// Database
+connectDB();
 
 // Routes
 app.use("/api/users", userRoutes);
