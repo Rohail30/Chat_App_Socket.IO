@@ -1,11 +1,18 @@
 import express from "express";
+import { connectDB } from "./config/db.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
+app.use(express.json);
 
-app.use('/', (req, res) => {
-    res.send("Hello!");
-})
+connectDB();
 
-app.listen(3000, () => {
+// Middleware
+app.use(express.json());
+
+// Routes
+app.use("/api/users", userRoutes);
+
+app.listen( 3000, () => {
     console.log("Server is running");
 })
