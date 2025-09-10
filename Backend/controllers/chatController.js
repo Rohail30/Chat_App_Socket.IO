@@ -5,41 +5,41 @@ export const getChat = async (req, res) => {
   try {
     const { receiver } = req.params;
     const { sender } = req.query;
-    console.log("[receiver] ===> ", receiver);
-    console.log("[sender] ===> ", sender);
+    
     const chat = await Chat.findOne({
       participants: { $all: [sender, receiver] },
     }).populate("messages.from", "username");
+
     if (!chat) {
       chat = new Chat({ participants: [userId, reciever], messages: [] });
       await chat.save();
     }
-    return res.status(200).json({ message: "ok", chat });
+
+    const messages = chat.messages;
+
+    return res.status(200).json({ messages: messages });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
 
-export const handleSocketMessages = async (io, socket, { sender, receiver, text }) => {
-  const roomId = [sender, receiver].sort().join("_");
 
-  let chat = await Chat.findOne({ participants: { $all: [sender, receiver] } });
+export const handleSocketMessage = async (data) => {
+  const chat = await Chat.findOne({ participants: { $all: [data.sender, data.receiver] }})
 
   if (!chat) {
-    chat = new Chat({ participants: [sender, receiver], messages: [] });
+    chat = new Chat({participants: [data.sender, data.receiver], messages: [] })
+
   }
 
-  const message = { from: sender, text };
+  const message = {from: data.sender, text: data.text};
   chat.messages.push(message);
   await chat.save();
 
-  await chat.populate("messages.from", "name");
-  const populatedMessage = chat.messages[chat.messages.length - 1];
+  return message;
 
-  io.to(roomId).emit("receiveMessage", populatedMessage);
-};
+}
 
-export const handleSocketMessage = async()
 
 export const getChatUsers = async (req, res) => {
   try {

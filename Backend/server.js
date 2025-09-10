@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 import { handleSocketMessage } from "./controllers/chatController.js";
 
 
+
 const app = express();
 
 app.use(cors({
@@ -40,10 +41,14 @@ io.on("connection", (socket) => {
     const roomID = [sender, receiver].sort().join("_");
     console.log("RoomID: ",roomID);
     socket.join(roomID);
+    console.log("Room Joined");
   })
 
-  socket.on("sendMessage", (data) => {
-    handleSocketMessage(io, socket, data);
+  socket.on("sendMessage", async (data) => {
+    const message = await handleSocketMessage(data);
+    console.log("[message]: ", message);
+    const roomId = [data.sender, data.receiver].sort().join("_")
+    io.to(roomId).emit("receiveMessage", message)
   })
 
   socket.on("disconnect", () => {

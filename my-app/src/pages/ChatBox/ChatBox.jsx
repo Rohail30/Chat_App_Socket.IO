@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import apiRequest from "../../config/apiRequest.js";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import "./ChatBox.css";
 
 const socket = io("http://localhost:3000", {
@@ -11,15 +11,15 @@ const socket = io("http://localhost:3000", {
 function ChatBox() {
   const { user1, user2 } = useParams();
   const navigate = useNavigate();
-
+  const [text, setText] = useState("");
   const [receiver, setReceiver] = useState(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState([]);
 
   useEffect(() => {
     const fetchPartner = async () => {
       try {
         const res = await apiRequest.get(`/api/users/${user2}`);
-        setReceiver(res.data);  
+        setReceiver(res.data);
       } catch (error) {
         console.error("Error fetching partner:", error);
       }
@@ -28,21 +28,10 @@ function ChatBox() {
     fetchPartner();
   }, [user2]);
 
-  // 2. Join room once user1 & user2 are known
   useEffect(() => {
     console.log("connected to server: ");
-    console.log("User1: ", user1);
-    console.log("User2: ", user2);
+      
     socket.emit("joinRoom", { sender: user1, receiver: user2 });
-
-    return () => {
-      socket.off();
-    };
-  }, [user1, user2]);
-
-  // 3. Fetch messages only when receiver is loaded
-  useEffect(() => {
-    if (!receiver) return;
 
     const fetchMessages = async () => {
       try {
@@ -57,10 +46,29 @@ function ChatBox() {
     };
 
     fetchMessages();
+
+     socket.on("receiveMessage", (msg) => {
+      console.log("[Incomming Message]: ",msg);
+      setMessage((prev) => [...prev, msg]);
+    });
+
+    return () => {
+      socket.off();
+    };
   }, [receiver, user1]);
 
-  const handleSend = () => {
-    
+  const handleSend = (value) => {
+    if (!value.trim()) return;
+    const data = {
+      sender: user1,
+      receiver: user2,
+      text: value,
+    }
+    console.log("[Existing Message]: ",message);
+
+    socket.emit("sendMessage", (data));
+
+    setText("");
   };
 
   return (
@@ -75,6 +83,7 @@ function ChatBox() {
         </button>
         <h2 className="chatbox-title">
           Chat with {receiver ? receiver.username : "Loading..."}
+          {/* {console.log("[message<---------]",message)} */}
         </h2>
       </div>
 
@@ -88,8 +97,8 @@ function ChatBox() {
           background: "#f9f9f9",
         }}
       >
-        {message?.chat?.messages?.length > 0 ? (
-          message.chat.messages.map((msg, index) => (
+        {message.messages?.length > 0 ? (
+          message.messages.map((msg, index) => (
             <div
               key={index}
               style={{
@@ -100,6 +109,7 @@ function ChatBox() {
             >
               <div
                 style={{
+
                   padding: "8px 12px",
                   borderRadius: "12px",
                   maxWidth: "60%",
@@ -137,11 +147,12 @@ function ChatBox() {
         <input
           type="text"
           placeholder="Type your message..."
-          // value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          value={text}
+          // onChange={(e) => setMessage(e.target.value)}
+          // onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onChange={(e) => setText(e.target.value)}
         />
-        <button onClick={handleSend}>Send</button>
+        <button onClick={() => handleSend(text)}>Send</button>
       </div>
     </div>
   );
