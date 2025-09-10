@@ -1,13 +1,14 @@
 import express from "express";
 const router = express.Router();
 
-const { getChat, getChatUsers } = require('../controllers/chatController');
-const verifyToken = require('../middleware/verifyToken');
+import { getChat, getChatUsers } from "../controllers/chatController.js";
+
+
 
 // @desc    Get chat between two users
-router.get('/api/chat/:reciever', verifyToken, getChat);
+router.get('/:receiver', getChat);
 
 // @desc    Get all chats
-router.get('/chat/users', verifyToken, getChatUsers);
+router.get('/chat/users', getChatUsers);
 
 export default router;

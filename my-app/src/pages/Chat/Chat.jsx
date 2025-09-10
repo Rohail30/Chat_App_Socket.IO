@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import apiRequest from "../../config/apiRequest.js";
+
 import "./Chat.css";
 
 function Chat() {
-  const { user1 } = useParams(); 
+  const { user1 } = useParams();
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
 
@@ -13,7 +14,9 @@ function Chat() {
       try {
         const res = await apiRequest.get("/api/users/getAll");
         const fetchedUsers = res.data.users || res.data || [];
-        const otherUsers = fetchedUsers.filter((u) => String(u._id) !== String(user1));
+        const otherUsers = fetchedUsers.filter(
+          (u) => String(u._id) !== String(user1)
+        );
         setUsers(otherUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -47,10 +50,9 @@ function Chat() {
           ))
         )}
       </div>
-
-      <button className="back-button" onClick={() => navigate("/")}>
-        Back to Home
-      </button>
+      <Link to="/" style={{ color: "black", textDecoration: "none" }}>
+        Back to Home!
+      </Link>
     </div>
   );
 }
