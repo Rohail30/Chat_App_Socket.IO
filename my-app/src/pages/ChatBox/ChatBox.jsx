@@ -30,15 +30,13 @@ function ChatBox() {
 
   useEffect(() => {
     console.log("connected to server: ");
-      
+
     socket.emit("joinRoom", { sender: user1, receiver: user2 });
 
     const fetchMessages = async () => {
       try {
-        const res = await apiRequest.get(
-          `/api/chat/${receiver._id}?sender=${user1}`
-        );
-        console.log("Messages ============> ",res.data);
+        const res = await apiRequest.get(`/api/chat/${user2}?sender=${user1}`);
+        console.log("Messages ============> ", res.data);
         setMessage(res.data);
       } catch (error) {
         console.error("Failed to fetch chat messages:", error);
@@ -47,15 +45,15 @@ function ChatBox() {
 
     fetchMessages();
 
-     socket.on("receiveMessage", (msg) => {
-      console.log("[Incomming Message]: ",msg);
+    socket.on("receiveMessage", (msg) => {
+      console.log("[Incomming Message]: ", msg);
       setMessage((prev) => [...prev, msg]);
     });
 
     return () => {
-      socket.off();
+      socket.off("receiveMessage");
     };
-  }, [receiver, user1]);
+  }, [user1, user2]);
 
   const handleSend = (value) => {
     if (!value.trim()) return;
@@ -63,15 +61,95 @@ function ChatBox() {
       sender: user1,
       receiver: user2,
       text: value,
-    }
-    console.log("[Existing Message]: ",message);
+    };
+    console.log("[Existing Message]: ", message);
 
-    socket.emit("sendMessage", (data));
+    socket.emit("sendMessage", data);
 
     setText("");
   };
 
   return (
+    // <div className="chatbox-container">
+    //   {/* Header */}
+    //   <div className="chatbox-header">
+    //     <button
+    //       className="back-button"
+    //       onClick={() => navigate(`/chat/${user1}`)}
+    //     >
+    //       ← Back
+    //     </button>
+    //     <h2 className="chatbox-title">
+    //       Chat with {receiver ? receiver.username : "Loading..."}
+    //       {/* {console.log("[message<---------]",message)} */}
+    //     </h2>
+    //   </div>
+
+    //   {/* Messages area */}
+    //   <div className="chatbox-messages">
+    //     {message?.length > 0 ? (
+    //       message.map((msg, index) => (
+    //         <div
+    //           key={index}
+    //           style={{
+    //             display: "flex",
+    //             justifyContent:
+    //               msg.from._id === user1 ? "flex-end" : "flex-start",
+    //             marginBottom: "8px",
+    //           }}
+    //         >
+    //           <div
+    //             style={{
+    //               padding: "8px 12px",
+    //               borderRadius: "12px",
+    //               maxWidth: "80%",
+    //               maxHeight: "90%",
+    //               background: msg.from._id === user1 ? "#4f46e5" : "#e5e7eb",
+    //               color: msg.from._id === user1 ? "white" : "black",
+    //               fontSize: "14px",
+    //             }}
+    //           >
+    //             <p>{msg.text}</p>
+    //             <span style={{ fontSize: "10px", opacity: 0.6 }}>
+    //               {msg.from.username}
+    //             </span>
+    //             <br />
+    //             <span style={{ fontSize: "10px", opacity: 0.6 }}>
+    //               {new Date(msg.date).toLocaleTimeString([], {
+    //                 hour: "2-digit",
+    //                 minute: "2-digit",
+    //               })}
+    //             </span>
+    //           </div>
+    //         </div>
+    //       ))
+    //     ) : (
+    //       <p
+    //         className="empty-text"
+    //         style={{ textAlign: "center", color: "#666" }}
+    //       >
+    //         No messages yet. Start chatting 👇
+    //       </p>
+    //     )}
+    //   </div>
+
+    //   {/* Input area */}
+    //   <div className="chatbox-input">
+    //     <input
+    //       type="text"
+    //       placeholder="Type your message..."
+    //       value={text}
+    //       // onChange={(e) => setMessage(e.target.value)}
+    //       onKeyDown={(e) => {
+    //         if (e.key === "Enter") {
+    //           handleSend(text); // send message
+    //         }
+    //       }}
+    //       onChange={(e) => setText(e.target.value)}
+    //     />
+    //     <button onClick={() => handleSend(text)}>Send</button>
+    //   </div>
+    // </div>
     <div className="chatbox-container">
       {/* Header */}
       <div className="chatbox-header">
@@ -83,47 +161,30 @@ function ChatBox() {
         </button>
         <h2 className="chatbox-title">
           Chat with {receiver ? receiver.username : "Loading..."}
-          {/* {console.log("[message<---------]",message)} */}
         </h2>
       </div>
 
       {/* Messages area */}
-      <div
-        className="chatbox-messages"
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "10px",
-          background: "#f9f9f9",
-        }}
-      >
-        {message.messages?.length > 0 ? (
-          message.messages.map((msg, index) => (
+      <div className="chatbox-messages">
+        {message?.length > 0 ? (
+          message.map((msg, index) => (
             <div
               key={index}
-              style={{
-                display: "flex",
-                justifyContent: msg.from._id === user1 ? "flex-end" : "flex-start",
-                marginBottom: "8px",
-              }}
+              className={`message-wrapper ${
+                msg.from._id === user1 ? "sent" : "received"
+              }`}
             >
               <div
+                className="message-bubble"
                 style={{
-
-                  padding: "8px 12px",
-                  borderRadius: "12px",
-                  maxWidth: "60%",
                   background: msg.from._id === user1 ? "#4f46e5" : "#e5e7eb",
                   color: msg.from._id === user1 ? "white" : "black",
-                  fontSize: "14px",
                 }}
               >
                 <p>{msg.text}</p>
-                <span style={{ fontSize: "10px", opacity: 0.6 }}>
-                  {msg.from.username}
-                </span>
-                <br/>
-                <span style={{ fontSize: "10px", opacity: 0.6 }}>
+                <span className="username">{msg.from.username}</span>
+                <br />
+                <span className="time">
                   {new Date(msg.date).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -133,12 +194,7 @@ function ChatBox() {
             </div>
           ))
         ) : (
-          <p
-            className="empty-text"
-            style={{ textAlign: "center", color: "#666" }}
-          >
-            No messages yet. Start chatting 👇
-          </p>
+          <p className="empty-text">No messages yet. Start chatting 👇</p>
         )}
       </div>
 
@@ -148,8 +204,11 @@ function ChatBox() {
           type="text"
           placeholder="Type your message..."
           value={text}
-          // onChange={(e) => setMessage(e.target.value)}
-          // onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSend(text);
+            }
+          }}
           onChange={(e) => setText(e.target.value)}
         />
         <button onClick={() => handleSend(text)}>Send</button>
