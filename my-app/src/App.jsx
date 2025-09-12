@@ -12,7 +12,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/chat/:user1" element={<Chat />} />
-      <Route path="/chat/:user1/:user2" element={<ChatBox />} />
+      <Route path="/chat/:user1/:user2" element={<Chat />} />
     </Routes>
     </div>
   );

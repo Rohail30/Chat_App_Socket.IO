@@ -1,53 +1,86 @@
-import User from "../schemas/User.js";
 import Chat from "../schemas/Chat.js";
+import Message from "../schemas/Message.js";
 
-export const getChat = async (req, res) => {
+export const getMessages = async (req, res) => {
   try {
-    const { receiver } = req.params;
-    const { sender } = req.query;
-    
-    let chat = await Chat.findOne({
-      participants: { $all: [sender, receiver] },
-    }).populate("messages.from", "username");
+    const id = req.params.id;
+
+    let chat = await Chat.findById(id);
 
     if (!chat) {
-      chat = new Chat({ participants: [sender, receiver], messages: [] }).populate("messages.from", "username");
-      await chat.save();
+      return res.status(404).json({ error: "Chat not found" });
     }
 
-    const messages = chat.messages;
+    let messages = await Message.find({ chat: id });
 
-    return res.status(200).json(messages );
+    return res.status(200).json(messages);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
 
+export const updateMessageStatus = async (req, res) => {
+  const messageID = req.params.id;
+  console.log('[MessageID',messageID);
+  const message = await Message.findOneAndUpdate(
+    { _id: messageID },
+    { $set: { status: "Double_Tick" } },
+    { new: true }
+  );
+  console.log('[Message]',message);
+  return res.status(200).json(message);
+};
+
+export const newChat = async (req, res) => {
+  try {
+    const { sender, receiver } = req.body;
+
+    let chat = await Chat.findOne({
+      participants: { $all: [sender, receiver] },
+    });
+
+    if (!chat) {
+      chat = await Chat.create({
+        participants: [sender, receiver],
+      });
+    }
+
+    return res
+      .status(200)
+      .json({ Message: "New Chat created Successfully", chat });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 export const handleSocketMessage = async (data) => {
-  let chat = await Chat.findOne({ participants: { $all: [data.sender, data.receiver] }})
+  const message = await Message.create({
+    chat: data.chat,
+    sender: data.sender,
+    receiver: data.receiver,
+    message: data.message,
+  });
 
-  if (!chat) {
-    chat = new Chat({participants: [data.sender, data.receiver], messages: [] })
+  return message;
+};
 
-  }
+export const handleReadStatus = async ({ chatID, receiver }) => {
+  console.log("[Data]===>", chatID, receiver);
 
-  const message = {from: data.sender, text: data.text};
+  let message = await Message.updateMany(
+    { chat: chatID, receiver: receiver }, // filter
+    { $set: { status: "Blue_Tick" } } // update
+  );
 
-  chat.messages.push(message);
-  chat.populate("messages.from", "username")
-  await chat.save();
+  console.log("[Updated]===>", message);
 
-  // Directly get the last message and populate it
-  const lastMessage = await Chat.findById(chat._id)
-    .select({ messages: { $slice: -1 } }) // only last one
-    .populate("messages.from", "username");
+  const updatedMessages = await Message.find({ chat: chatID, receiver });
 
-  console.log("[Handle Socket Chat] =======>", lastMessage.messages[0]);
-
-  return lastMessage.messages[0];
-
-}
-
-
-
+  console.log("[Updated Messages]===>", updatedMessages);
+  // const message = await Message.findByIdAndUpdate(
+  //   messageID,
+  //   { status: "Blue_Tick" },
+  //   { new: true } // return updated doc
+  // );
+  return message;
+};

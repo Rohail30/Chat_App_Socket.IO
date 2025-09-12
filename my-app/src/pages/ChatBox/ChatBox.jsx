@@ -1,4 +1,3 @@
-import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import apiRequest from "../../config/apiRequest.js";
 import { io } from "socket.io-client";
@@ -8,17 +7,17 @@ const socket = io("http://localhost:3000", {
   withCredentials: true,
 });
 
-function ChatBox() {
-  const { user1, user2 } = useParams();
-  const navigate = useNavigate();
+function ChatBox({ user1, user2, chatID }) {
   const [text, setText] = useState("");
   const [receiver, setReceiver] = useState(null);
   const [message, setMessage] = useState([]);
 
   useEffect(() => {
     const fetchPartner = async () => {
+      if (!user2) return; // prevent fetch with undefined
       try {
         const res = await apiRequest.get(`/api/users/${user2}`);
+        console.log("[Receiver]", res.data);
         setReceiver(res.data);
       } catch (error) {
         console.error("Error fetching partner:", error);
@@ -35,7 +34,7 @@ function ChatBox() {
 
     const fetchMessages = async () => {
       try {
-        const res = await apiRequest.get(`/api/chat/${user2}?sender=${user1}`);
+        const res = await apiRequest.get(`/api/chat/getMessages/${chatID}`);
         console.log("Messages ============> ", res.data);
         setMessage(res.data);
       } catch (error) {
@@ -45,9 +44,11 @@ function ChatBox() {
 
     fetchMessages();
 
-    socket.on("receiveMessage", (msg) => {
-      console.log("[Incomming Message]: ", msg);
-      setMessage((prev) => [...prev, msg]);
+    socket.on("receiveMessage", async (msg) => {
+      const message = await apiRequest.put(`/api/chat/updateStatus/${msg._id}`);
+
+      console.log("[Incomming Message]: ", message.data);
+      setMessage((prev) => [...prev, message.data]);
     });
 
     return () => {
@@ -58,12 +59,17 @@ function ChatBox() {
   const handleSend = (value) => {
     if (!value.trim()) return;
     const data = {
+      chat: chatID,
       sender: user1,
       receiver: user2,
-      text: value,
+      message: value,
+      date: Date.now(),
+      status: "Single_Tick",
     };
+
     console.log("[Existing Message]: ", message);
 
+    // setMessage((prev) => [...prev, data]);
     socket.emit("sendMessage", data);
 
     setText("");
@@ -73,14 +79,8 @@ function ChatBox() {
     <div className="chatbox-container">
       {/* Header */}
       <div className="chatbox-header">
-        <button
-          className="back-button"
-          onClick={() => navigate(`/chat/${user1}`)}
-        >
-          ← Back
-        </button>
         <h2 className="chatbox-title">
-          Chat with {receiver ? receiver.username : "Loading..."}
+          {receiver ? receiver.username : "Start Chatting now"}
         </h2>
       </div>
 
@@ -91,18 +91,19 @@ function ChatBox() {
             <div
               key={index}
               className={`message-wrapper ${
-                msg.from._id === user1 ? "sent" : "received"
+                msg.sender === user1 ? "sent" : "received"
               }`}
             >
               <div
                 className="message-bubble"
                 style={{
-                  background: msg.from._id === user1 ? "#4f46e5" : "#e5e7eb",
-                  color: msg.from._id === user1 ? "white" : "black",
+                  background: msg.sender === user1 ? "#4f46e5" : "#e5e7eb",
+                  color: msg.sender === user1 ? "white" : "black",
                 }}
               >
-                <p>{msg.text}</p>
-                <span className="username">{msg.from.username}</span>
+                <p>{msg.message}</p>
+                {/* <span className="username">{msg.sender.username}</span> */}
+                <span className="username">{msg.status}</span>
                 <br />
                 <span className="time">
                   {new Date(msg.date).toLocaleTimeString([], {
