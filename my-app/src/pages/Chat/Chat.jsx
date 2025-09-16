@@ -1,82 +1,15 @@
-// import { useEffect, useState } from "react";
-// import { useParams, useNavigate, Link } from "react-router-dom";
-// import apiRequest from "../../config/apiRequest.js";
-
-// import "./Chat.css";
-
-// function Chat() {
-//   const { user1 } = useParams();
-//   const [users, setUsers] = useState([]);
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     const fetchUsers = async () => {
-//       try {
-//         const res = await apiRequest.get("/api/users/getAll");
-//         const fetchedUsers = res.data.users || res.data || [];
-//         const otherUsers = fetchedUsers.filter(
-//           (u) => String(u._id) !== String(user1)
-//         );
-//         setUsers(otherUsers);
-//       } catch (error) {
-//         console.error("Error fetching users:", error);
-//         setUsers([]);
-//       }
-//     };
-
-//     fetchUsers();
-//   }, [user1]);
-
-//   const handleChat = (chatUserId) => {
-//     navigate(`/chat/${user1}/${chatUserId}`);
-//   };
-
-//   return (
-//     <div className="chat-container">
-//       <h1 className="chat-title">Select a User to Chat</h1>
-
-//       <div className="chat-list">
-//         {users.length === 0 ? (
-//           <p className="empty-text">No other users available.</p>
-//         ) : (
-//           users.map((user) => (
-//             <button
-//               key={user._id}
-//               className="chat-user-button"
-//               onClick={() => handleChat(user._id)}
-//             >
-//               {user.username}
-//             </button>
-//           ))
-//         )}
-//       </div>
-//       <Link to="/" style={{ color: "black", textDecoration: "none" }}>
-//         Back to Home!
-//       </Link>
-//     </div>
-//   );
-// }
-
-// export default Chat;
-
-import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import apiRequest from "../../config/apiRequest.js";
 import ChatBox from "../ChatBox/ChatBox.jsx";
-import "./Chat.css";
-// import { io } from "socket.io-client";
+import { AuthContext } from "../../config/AuthContext.jsx";
 
-// const socket = io("http://localhost:3000", {
-//   withCredentials: true,
-// });
+import "./Chat.css";
 
 const Chat = () => {
-  const navigate = useNavigate()
-  const { user1 } = useParams();
-  const [users, setUsers] = useState([]);
+  const { currentUser } = useContext(AuthContext);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [chatID, setChatID] = useState();
-  
+  // const { users, setUsers } = useState([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -84,18 +17,19 @@ const Chat = () => {
         const res = await apiRequest.get("/api/users/getAll");
         const fetchedUsers = res.data.users || res.data || [];
         console.log("[res.data.users]", res.data);
+        console.log("currentUser===> ", currentUser);
         const otherUsers = fetchedUsers.filter(
-          (u) => String(u._id) !== String(user1)
+          (u) => String(u._id) !== String(currentUser)
         );
-        setUsers(otherUsers);
+        // setUsers(otherUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
-        setUsers([]);
+        // setUsers([]);
       }
     };
 
     fetchUsers();
-  }, [user1]);
+  }, [currentUser]);
 
   const [chats] = useState([
     { id: 1, name: "Alice", lastMessage: "Hey, how are you?" },
@@ -118,31 +52,6 @@ const Chat = () => {
     { id: 3, sender: "Alice", text: "How’s it going?", self: false },
     { id: 4, sender: "Me", text: "All good, what about you?", self: true },
   ]);
-
-  const handleNewChat = async (value) => {
-  console.log("==>", value);
-  try {
-    const res = await apiRequest.post("/api/chat/new", {
-      sender: user1,
-      receiver: value,
-    });
-    console.log("[Response]===>", res.data.chat._id);
-
-    // set selected user (user2) for ChatBox
-    setSelectedUser(value);
-    setChatID(res.data.chat._id)
-
-    // navigate(`/chat/${user1}/${value}`);
-    // // socket.emit("seenMessage", ({chatID: res.data.chat._id, receiver: value}));
-
-    // return () => {
-    //   socket.off("seenMessage");
-    // };
-  } catch (error) {
-    console.error("Error creating chat:", error);
-  }
-};
-
 
   return (
     <div className="chatapp-container">
@@ -178,17 +87,18 @@ const Chat = () => {
           <button>Send</button>
         </div>
       </div> */}
-      <ChatBox user1={user1} user2={selectedUser} chatID={chatID} />
+
+      <ChatBox />
 
       {/* Right Sidebar */}
-      <div className="sidebar contacts-list">
+      {/* <div className="sidebar contacts-list">
         <h3>Contacts</h3>
         {users.map((c, i) => (
           <div key={i} className="contact-item">
             <div onClick={(e) => handleNewChat(c._id)}>{c.username}</div>
           </div>
         ))}
-      </div>
+      </div> */}
     </div>
   );
 };

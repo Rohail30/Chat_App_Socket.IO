@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import { newChat, getMessages, updateMessageStatus } from "../controllers/chatController.js";
+import { newChat, getMessages } from "../controllers/chatController.js";
 
 
 
@@ -12,7 +12,7 @@ router.post('/new', newChat);
 
 router.get('/getMessages/:id', getMessages);
 
-router.put('/updateStatus/:id', updateMessageStatus);
+//router.put('/updateStatus/:id', updateMessageStatus);
 
 
 

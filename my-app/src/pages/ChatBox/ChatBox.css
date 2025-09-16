@@ -1,7 +1,13 @@
+.Messenger{
+  display: flex;
+  flex-direction: row;
+}
+
+
 .chatbox-container {
   display: flex;
   flex-direction: column;
-  width: 100vw;
+  width: 80vw;
   height: 100vh;
   background: #f5f5f7;
 }

@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/apiRequest.js';
 import './Login.css';
+import { AuthContext } from '../../config/AuthContext.jsx';
+
+
+
 
 function Login() {
+  const { updateUser } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
 
@@ -24,7 +29,8 @@ function Login() {
   }, []);
 
   const handleLogin = (userId) => {
-    navigate(`/chat/${userId}`);
+    updateUser(userId);
+    navigate(`/welcome`);
   };
 
   const goHome = () => {
