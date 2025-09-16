@@ -4,9 +4,11 @@ import apiRequest from "../../config/apiRequest.js";
 import ChatBox from "../ChatBox/ChatBox.jsx";
 import { AuthContext } from "../../config/AuthContext.jsx";
 
+
 import "./Chat.css";
 
 const Chat = () => {
+  
   const { currentUser } = useContext(AuthContext);
   const [selectedUser, setSelectedUser] = useState(null);
   // const { users, setUsers } = useState([]);
@@ -30,6 +32,8 @@ const Chat = () => {
 
     fetchUsers();
   }, [currentUser]);
+
+  
 
   const [chats] = useState([
     { id: 1, name: "Alice", lastMessage: "Hey, how are you?" },

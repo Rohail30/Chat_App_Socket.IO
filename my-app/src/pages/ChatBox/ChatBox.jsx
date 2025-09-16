@@ -19,10 +19,9 @@ function ChatBox() {
   const [chatID, setChatID] = useState();
   const [selectedUser, setSelectedUser] = useState();
 
-  console.log("[Socket]: ",socket);
+  console.log("[Socket]: ", socket);
 
   useEffect(() => {
-    
     socket.on("message_read", (updatedMsgs) => {
       setMessage((prev) =>
         prev.map((msg) => {
@@ -98,6 +97,8 @@ function ChatBox() {
 
     socket.emit("joinRoom", { sender: currentUser, receiver: selectedUser });
 
+    socket.emit("WhoIsOnline", { sender: currentUser, receiver: selectedUser });
+
     const fetchMessages = async () => {
       try {
         const res = await apiRequest.get(`/api/chat/getMessages/${chatID}`);
@@ -110,10 +111,16 @@ function ChatBox() {
 
     fetchMessages();
 
+    // socket.on("receiveMessage", async (msg) => {
+    //   // const res = await apiRequest.put(`/api/chat/updateStatus/${msg._id}`);
+    //   // console.log("[Incomming Message]: ", msg);
+    //   // setMessage((prev) => [...prev, msg]);
+
+    // });
+
     socket.on("receiveMessage", async (msg) => {
-      // const res = await apiRequest.put(`/api/chat/updateStatus/${msg._id}`);
-      // console.log("[Incomming Message]: ", res.data);
-      setMessage((prev) => [...prev, msg]);
+      const messages = Array.isArray(msg) ? msg : [msg];
+      setMessage((prev) => [...prev, ...messages]);
     });
 
     return () => {

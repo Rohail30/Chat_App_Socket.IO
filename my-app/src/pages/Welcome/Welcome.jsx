@@ -3,13 +3,13 @@ import { AuthContext } from "../../config/AuthContext.jsx";
 import apiRequest from "../../config/apiRequest.js";
 import { Link } from "react-router-dom";
 import { useSocket } from "../../config/socketContext.jsx";
+
 import "./Welcome.css"; // Import CSS
 
 function Welcome() {
+  const socket = useSocket();
   const { currentUser } = useContext(AuthContext);
   const [user, setUser] = useState();
-
-  const socket = useSocket();
 
   console.log("[Socket]: ", socket);
 
@@ -24,6 +24,14 @@ function Welcome() {
       }
     };
     fetchUser();
+  }, [currentUser]);
+
+  useEffect(() => {    
+    socket.emit("WhoIsOnline", { sender: currentUser});
+
+    return () => {
+      socket.off("WhoIsOnline");
+    };
   }, [currentUser]);
 
   return (

@@ -34,17 +34,13 @@ export const getMessages = async (req, res) => {
 // };
 
 export const updateMessageStatus = async (chatID) => {
-  try {
-    const messageID = chatID;
-    const message = await Message.findOneAndUpdate(
-      { chat: messageID },
-      { $set: { status: "Double_Tick" } },
-      { new: true }
-    );
-    return (message);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
+  const messageID = chatID;
+  const message = await Message.findOneAndUpdate(
+    { chat: messageID },
+    { $set: { status: "Double_Tick" } },
+    { new: true }
+  ).sort({ createdAt: -1 });
+  return message;
 };
 
 export const newChat = async (req, res) => {
@@ -84,8 +80,8 @@ export const handleReadStatus = async ({ chatID, receiver }) => {
   // console.log("[Data]===>", chatID, receiver);
 
   await Message.updateMany(
-    { chat: chatID, receiver: receiver}, // filter
-    { $set: { status: "Blue_Tick" }, }, // update
+    { chat: chatID, receiver: receiver }, // filter
+    { $set: { status: "Blue_Tick" } } // update
   );
 
   // console.log("[Updated]===>", message);
@@ -98,5 +94,23 @@ export const handleReadStatus = async ({ chatID, receiver }) => {
   //   { status: "Blue_Tick" },
   //   { new: true } // return updated doc
   // );
+  return updatedMessages;
+};
+
+export const DoubleTick = async ({ sender, receiver }) => {
+
+  await Message.updateMany(
+    { receiver: sender, status: "Single_Tick" },
+    { $set: { status: "Double_Tick" } }
+  );
+
+  const updatedMessages = await Message.find({
+    sender: receiver,
+    receiver: sender,
+    status: "Double_Tick",
+  });
+
+  
+  console.log("[updatedMessages]",updatedMessages)
   return updatedMessages;
 };

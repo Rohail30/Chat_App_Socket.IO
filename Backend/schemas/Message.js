@@ -26,7 +26,7 @@ const messageSchema = new mongoose.Schema({
         enum: ["Single_Tick","Double_Tick","Blue_Tick"],
         default: "Single_Tick"
     }
-})
+},{ timestamps: true })
 
 const Message = mongoose.model("Message", messageSchema);
 export default Message;
