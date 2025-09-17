@@ -1,6 +1,7 @@
 .Messenger{
   display: flex;
   flex-direction: row;
+  width: 60%;
 }
 
 
@@ -60,15 +61,18 @@
 }
 
 .message-bubble {
+  
   padding: 8px 12px;
   border-radius: 12px;
+  min-width: 30px;
   max-width: 80%;
   font-size: 14px;
 }
 
-.message-bubble .username {
-  font-size: 10px;
+.message-bubble .status {
+  font-size: 20px;
   opacity: 0.6;
+  text-align: right;
 }
 
 .message-bubble .time {

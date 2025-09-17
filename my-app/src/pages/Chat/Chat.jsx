@@ -1,8 +1,9 @@
 import { useEffect, useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import apiRequest from "../../config/apiRequest.js";
-import ChatBox from "../ChatBox/ChatBox.jsx";
 import { AuthContext } from "../../config/AuthContext.jsx";
+import ChatBox from "../ChatBox/ChatBox.jsx";
+
 
 
 import "./Chat.css";
@@ -10,23 +11,23 @@ import "./Chat.css";
 const Chat = () => {
   
   const { currentUser } = useContext(AuthContext);
-  const [selectedUser, setSelectedUser] = useState(null);
-  // const { users, setUsers } = useState([]);
+  const [ users, setUsers ] = useState([]);
+  const [selectedUser, setSelectedUser] = useState();
+  const [chatID, setChatID] = useState();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await apiRequest.get("/api/users/getAll");
         const fetchedUsers = res.data.users || res.data || [];
-        console.log("[res.data.users]", res.data);
-        console.log("currentUser===> ", currentUser);
         const otherUsers = fetchedUsers.filter(
           (u) => String(u._id) !== String(currentUser)
         );
-        // setUsers(otherUsers);
+        setUsers(otherUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
-        // setUsers([]);
+        setUsers([]);
       }
     };
 
@@ -57,6 +58,23 @@ const Chat = () => {
     { id: 4, sender: "Me", text: "All good, what about you?", self: true },
   ]);
 
+  const handleNewChat = async (value) => {
+    console.log("==>", value);
+    try {
+      const res = await apiRequest.post("/api/chat/new", {
+        sender: currentUser,
+        receiver: value,
+      });
+      setSelectedUser(value);
+      setChatID(res.data.chat._id);
+
+      navigate(`/chat/${currentUser}/${value}`);
+    } catch (error) {
+      console.error("Error creating chat:", error);
+    }
+  };
+
+
   return (
     <div className="chatapp-container">
       {/* Left Sidebar */}
@@ -74,35 +92,17 @@ const Chat = () => {
       </div>
 
       {/* Middle Messages Area */}
-      {/* <div className="chat-area">
-        <div className="chat-header">Chat with Alice</div>
-        <div className="messages">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`message ${msg.self ? "self" : "other"}`}
-            >
-              <span>{msg.text}</span>
-            </div>
-          ))}
-        </div>
-        <div className="chat-input">
-          <input type="text" placeholder="Type a message..." />
-          <button>Send</button>
-        </div>
-      </div> */}
-
-      <ChatBox />
+      <ChatBox selectedUser={selectedUser} chatID={chatID}  />
 
       {/* Right Sidebar */}
-      {/* <div className="sidebar contacts-list">
+      <div className="sidebar contacts-list">
         <h3>Contacts</h3>
         {users.map((c, i) => (
           <div key={i} className="contact-item">
             <div onClick={(e) => handleNewChat(c._id)}>{c.username}</div>
           </div>
         ))}
-      </div> */}
+      </div>
     </div>
   );
 };

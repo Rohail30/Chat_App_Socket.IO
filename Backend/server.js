@@ -11,7 +11,7 @@ import {
   handleReadStatus,
   updateMessageStatus,
   DoubleTick,
-} from "./controllers/chatController.js";
+} from "./controllers/socketController.js";
 
 const app = express();
 
@@ -70,28 +70,21 @@ io.on("connection", (socket) => {
           receiver: userId,
         });
         const roomId = [sender, userId].sort().join("_");
-        io.to(roomId).emit("receiveMessage", updatedMessage);
+        io.to(roomId).emit("messages_updated", updatedMessage);
       }
     }
   });
 
   socket.on("sendMessage", async (data) => {
-    console.log("[DATA]", data);
     const message = await handleSocketMessage(data);
     const roomId = [data.sender, data.receiver].sort().join("_");
     const socketId = onlineUsers.get(data.receiver);
-    console.log("[socketId]", socketId);
-    console.log("[onlineUsers]", onlineUsers);
     if (socketId) {
       // ✅ receiver is online → send directly
-
       const updatedMessage = await updateMessageStatus(data.chat);
-      console.log("[Message Sent Throuhgh Update]", updatedMessage);
       io.to(roomId).emit("receiveMessage", updatedMessage);
     } else {
-      console.log("[Message Sent Normally]");
       io.to(roomId).emit("receiveMessage", message);
-      // console.log(`User ${data.receiver} is offline`);
     }
   });
 
