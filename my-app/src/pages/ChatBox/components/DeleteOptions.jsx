@@ -1,16 +1,16 @@
-function DeleteOptions({ selectedMessages, currentUser, handleDeleteForMe, handleDeleteForAll }) {
-  const allMine = selectedMessages.every(msg => msg.sender === currentUser);
-
+function DeleteOptions({
+  message,
+  selectedMessages,
+  currentUser,
+  handleDeleteForMe,
+  handleDeleteForAll,
+}) {
   return (
     <div className="delete-options">
-      {allMine ? (
-        <>
-          <button onClick={handleDeleteForMe}>Delete for Me</button>
-          <button onClick={handleDeleteForAll}>Delete for Everyone</button>
-        </>
-      ) : (
-        <button onClick={handleDeleteForMe}>Delete for Me</button>
-      )}
+      <button onClick={handleDeleteForMe}>Delete for me</button>
+      {selectedMessages.every(
+        (id) => message.find((m) => m._id === id)?.sender === currentUser
+      ) && <button onClick={handleDeleteForAll}>Delete for Everyone</button>}
     </div>
   );
 }

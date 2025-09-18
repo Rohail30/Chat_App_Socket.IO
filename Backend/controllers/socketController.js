@@ -16,6 +16,7 @@ export const handleSocketMessage = async (data) => {
     sender: data.sender,
     receiver: data.receiver,
     message: data.message,
+    status: "Single_Tick",
   });
 
   return message;

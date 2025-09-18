@@ -48,7 +48,9 @@ function Welcome() {
           <Link to="/login" className="btn btn-red">
             Back to Login
           </Link>
-
+          <Link to="/dexie" className="btn btn-red">
+            Dexie
+          </Link>
           {/* Only show when user exists */}
           {user && (
             <Link to={`/chat/${currentUser}`} className="btn btn-indigo">

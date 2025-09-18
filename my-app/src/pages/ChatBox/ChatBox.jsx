@@ -1,18 +1,21 @@
 import { useSocket } from "../../config/socketContext.jsx";
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../config/AuthContext.jsx";
+import { db } from "../../db/db.ts";
+import { useLiveQuery } from "dexie-react-hooks";
 import apiRequest from "../../config/apiRequest.js";
-import { RiCheckFill } from "react-icons/ri";
-import { PiChecks } from "react-icons/pi";
-import { CiMenuKebab } from "react-icons/ci";
-import { MdOutlineDelete, MdOutlineCancel } from "react-icons/md";
-import "./ChatBox.css";
 import ChatHeader from "./Components/ChatHeader.jsx";
 import ChatInput from "./components/ChatInput.jsx";
+import MessageList from "./components/MessageList.jsx";
+import DeleteOptions from "./components/DeleteOptions.jsx";
+import "./ChatBox.css";
 
 function ChatBox({ selectedUser, chatID }) {
   const socket = useSocket();
   const { currentUser } = useContext(AuthContext);
+
+  // Get all messages from IndexedDB (live updating)
+  const messages = useLiveQuery(() => db.messages.toArray(), []);
 
   // Local State
   const [text, setText] = useState(""); // message input field
@@ -253,8 +256,31 @@ function ChatBox({ selectedUser, chatID }) {
   };
 
   // ✅ Send message
-  const handleSend = (value) => {
+  const handleSend = async (value) => {
     if (!value.trim()) return;
+
+    const newMessage = {
+      chat: chatID,
+      sender: currentUser,
+      receiver: selectedUser,
+      message: value,
+      date: Date.now(),
+      status: "Clock",
+    };
+
+    // Save message to Dexie
+    await db.messages.add(newMessage);
+
+    // Fetch all messages
+    let allMessages = await db.messages.toArray();
+    console.log("[All Dexie Messages]", allMessages);
+
+    // Clear messages
+    await db.messages.clear();
+
+    // Fetch after clearing
+    const messagesAfterClear = await db.messages.toArray();
+    console.log("[After Dexie Messages]", messagesAfterClear); // []
 
     const data = {
       chat: chatID,
@@ -265,6 +291,10 @@ function ChatBox({ selectedUser, chatID }) {
       status: "Single_Tick",
     };
 
+    setMessage((prev) => [...prev, newMessage]);
+    // Remove newMessage from state
+    // setMessage((prev) => prev.filter((msg) => msg.date !== newMessage.date));
+
     socket.emit("sendMessage", data);
     setText("");
   };
@@ -273,151 +303,42 @@ function ChatBox({ selectedUser, chatID }) {
     <div className="Messenger">
       <div className="chatbox-container">
         {/* ---------------- Header ---------------- */}
-        {/* <ChatHeader
+        <ChatHeader
           receiver={receiver}
           selectionMode={selectionMode}
           setSelectionMode={setSelectionMode}
           menuOpen={menuOpen}
+          setMenuOpen={setMenuOpen}
           handleMenu={handleMenu}
           handleDeleteChat={handleDeleteChat}
-        /> */}
-        <div className="chatbox-header">
-          <h2 className="chatbox-title">
-            {receiver ? receiver?.username : "Start Chatting now"}
-          </h2>
-
-          <div className="chatbox-actions">
-            {selectionMode ? (
-              <>
-                {/* Delete & Cancel buttons in selection mode */}
-                <button onClick={() => setDeleteOptions(true)}>
-                  <MdOutlineDelete style={{ fontSize: "25px" }} />
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectionMode(false);
-                    setMenuOpen(false);
-                    setDeleteOptions(false);
-                  }}
-                >
-                  <MdOutlineCancel style={{ fontSize: "25px" }} />
-                </button>
-              </>
-            ) : (
-              selectedUser && (
-                <>
-                  {/* 3-dots menu */}
-                  <CiMenuKebab
-                    onClick={handleMenu}
-                    style={{ cursor: "pointer" }}
-                  />
-                  {menuOpen && (
-                    <div className="chatbox-menu">
-                      <ul>
-                        <li onClick={handleDeleteChat}>Delete Chat</li>
-                        <li>Block User</li>
-                        <li>View Profile</li>
-                      </ul>
-                    </div>
-                  )}
-                </>
-              )
-            )}
-          </div>
-        </div>
+          setDeleteOptions={setDeleteOptions}
+          selectedUser={selectedUser}
+        />
 
         {/* ---------------- Delete Options ---------------- */}
         {deleteOptions && selectedMessages.length > 0 && (
-          <div className="delete-options">
-            <button onClick={handleDeleteForMe}>Delete for me</button>
-            {selectedMessages.every(
-              (id) => message.find((m) => m._id === id)?.sender === currentUser
-            ) && (
-              <button onClick={handleDeleteForAll}>Delete for Everyone</button>
-            )}
-          </div>
+          <DeleteOptions
+            message={message}
+            selectedMessages={selectedMessages}
+            currentUser={currentUser}
+            handleDeleteForMe={handleDeleteForMe}
+            handleDeleteForAll={handleDeleteForAll}
+          />
         )}
 
         {/* ---------------- Messages Area ---------------- */}
-        <div className="chatbox-messages">
-          {message?.length > 0 ? (
-            message.map((msg) => (
-              <div
-                key={msg._id}
-                className={`message-wrapper ${
-                  msg.sender === currentUser ? "sent" : "received"
-                }`}
-                onClick={() => selectionMode && toggleSelectMessage(msg._id)}
-                style={{
-                  background: selectedMessages.includes(msg._id)
-                    ? "#444"
-                    : "transparent",
-                  cursor: selectionMode ? "pointer" : "default",
-                }}
-              >
-                {selectionMode && !msg.deletedForEveryone && (
-                  <input
-                    type="checkbox"
-                    checked={selectedMessages.includes(msg._id)}
-                    onChange={() => toggleSelectMessage(msg._id)}
-                  />
-                )}
-
-                {!msg.deletedForEveryone && (
-                  <div
-                    className="message-bubble"
-                    style={{
-                      background:
-                        msg.sender === currentUser ? "#C4EFC4" : "#e5e7eb",
-                      color: msg.sender === currentUser ? "white" : "black",
-                    }}
-                  >
-                    {/* Handle delete logic in UI */}
-                    <p>
-                      {msg.deletedForMe && msg.sender === currentUser
-                        ? "This message was deleted"
-                        : msg.message}
-                    </p>
-
-                    {/* Message Status (ticks) */}
-                    <span className="status">
-                      {msg.status === "Single_Tick" && <RiCheckFill />}
-                      {msg.status === "Double_Tick" && <PiChecks />}
-                      {msg.status === "Blue_Tick" && <PiChecks color="blue" />}
-                    </span>
-
-                    <br />
-
-                    {/* Message Time */}
-                    <span className="time">
-                      {new Date(msg.date).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="empty-text">No messages yet. Start chatting 👇</p>
-          )}
-        </div>
+        <MessageList
+          message={message}
+          currentUser={currentUser}
+          selectionMode={selectionMode}
+          selectedMessages={selectedMessages}
+          toggleSelectMessage={toggleSelectMessage}
+        />
 
         {/* ---------------- Input Area ---------------- */}
-        {/* {selectedUser && (
-          <div className="chatbox-input">
-            <input
-              type="text"
-              placeholder="Type your message..."
-              value={text}
-              onKeyDown={(e) => e.key === "Enter" && handleSend(text)}
-              onChange={(e) => setText(e.target.value)}
-            />
-            <button onClick={() => handleSend(text)}>Send</button>
-          </div>
-        )} */}
-        <ChatInput text={text} setText={setText} handleSend={handleSend} />
+        {selectedUser && (
+          <ChatInput text={text} setText={setText} handleSend={handleSend} />
+        )}
       </div>
     </div>
   );

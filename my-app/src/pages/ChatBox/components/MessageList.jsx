@@ -1,10 +1,10 @@
 import MessageItem from "./MessageItem";
 
-function MessageList({ messages, currentUser, selectionMode, selectedMessages, toggleSelectMessage }) {
+function MessageList({ message, currentUser, selectionMode, selectedMessages, toggleSelectMessage }) {
   return (
     <div className="chatbox-messages">
-      {messages.length > 0 ? (
-        messages.map(msg => (
+      {message.length > 0 ? (
+        message.map(msg => (
           <MessageItem
             key={msg._id}
             msg={msg}

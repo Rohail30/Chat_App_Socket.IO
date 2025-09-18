@@ -23,7 +23,7 @@ const messageSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["Single_Tick","Double_Tick","Blue_Tick"],
+        enum: ["Single_Tick","Double_Tick","Blue_Tick","Clock"],
         default: "Single_Tick"
     },
     deletedForMe: {
