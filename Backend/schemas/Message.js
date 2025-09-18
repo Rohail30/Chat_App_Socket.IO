@@ -25,7 +25,16 @@ const messageSchema = new mongoose.Schema({
         type: String,
         enum: ["Single_Tick","Double_Tick","Blue_Tick"],
         default: "Single_Tick"
+    },
+    deletedForMe: {
+      type: Boolean,
+      default: false 
     }
+  ,
+  deletedForEveryone: { 
+    type: Boolean, 
+    default: false 
+  }
 },{ timestamps: true })
 
 const Message = mongoose.model("Message", messageSchema);

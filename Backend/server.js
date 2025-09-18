@@ -11,6 +11,8 @@ import {
   handleReadStatus,
   updateMessageStatus,
   DoubleTick,
+  deleteForMe,
+  deleteForEveryone,
 } from "./controllers/socketController.js";
 
 const app = express();
@@ -49,9 +51,14 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   const { userId } = socket.handshake.auth;
   console.log("User Connected: ", socket.id);
+  console.log("[ONLIN EUSERS MAP]", onlineUsers);
 
-  if (userId) {
+  const userExist = onlineUsers.get(userId, socket.id);
+  console.log("[USERS EXISTS IN ONLINE USERS]", userExist);
+
+  if (!userExist) {
     onlineUsers.set(userId, socket.id);
+    console.log("[ONINE USERS IN IF BLOCK]", onlineUsers);
     console.log(`✅ User ${userId} connected with socket ${socket.id}`);
   }
 
@@ -64,7 +71,9 @@ io.on("connection", (socket) => {
   socket.on("WhoIsOnline", async ({ sender }) => {
     console.log("[onlineUsers]", onlineUsers);
     for (const [userId] of onlineUsers) {
+      console.log("[USER ID ]", userId);
       if (userId != sender) {
+        console.log("[SENDING PENDING MESSAGES]");
         const updatedMessage = await DoubleTick({
           sender: sender,
           receiver: userId,
@@ -93,6 +102,18 @@ io.on("connection", (socket) => {
     const roomId = [sender, receiver].sort().join("_");
     io.to(roomId).emit("message_read", updatedMessages);
   });
+
+  socket.on("deleteForMe", async({messages, sender, receiver}) => {
+    const deletedMessages =  await deleteForMe({messages, sender, receiver});
+    const roomID = [sender, receiver].sort().join("_");
+    io.to(roomID).emit("forMeDeleted", deletedMessages);
+  })
+
+  socket.on("deleteForEveryone", async({messages, sender, receiver}) => {
+    const deletedMessages =  await deleteForEveryone({messages, sender, receiver});
+    const roomID = [sender, receiver].sort().join("_");
+    io.to(roomID).emit("forEveryoneDeleted", deletedMessages);
+  })
 
   socket.on("disconnect", () => {
     console.log(`User ${userId} disconnected`);

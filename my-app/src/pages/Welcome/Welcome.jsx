@@ -2,16 +2,16 @@ import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../config/AuthContext.jsx";
 import apiRequest from "../../config/apiRequest.js";
 import { Link } from "react-router-dom";
-import { useSocket } from "../../config/socketContext.jsx";
+// import { useSocket } from "../../config/socketContext.jsx";
 
 import "./Welcome.css"; // Import CSS
 
 function Welcome() {
-  const socket = useSocket();
+  // const socket = useSocket();
   const { currentUser } = useContext(AuthContext);
   const [user, setUser] = useState();
 
-  console.log("[Socket]: ", socket);
+  // console.log("[Socket]: ", socket);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -26,13 +26,13 @@ function Welcome() {
     fetchUser();
   }, [currentUser]);
 
-  useEffect(() => {    
-    socket.emit("WhoIsOnline", { sender: currentUser});
+  // useEffect(() => {    
+  //   socket.emit("WhoIsOnline", { sender: currentUser});
 
-    return () => {
-      socket.off("WhoIsOnline");
-    };
-  }, [currentUser]);
+  //   return () => {
+  //     socket.off("WhoIsOnline");
+  //   };
+  // }, []);
 
   return (
     <div className="welcome-container">

@@ -43,4 +43,40 @@ export const newChat = async (req, res) => {
   }
 };
 
+export const deleteForMe = async (req, res) => {
+  try {
+    const { messageIds } = req.body; // array of message ids
 
+    if (!Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({ error: "No message IDs provided" });
+    }
+
+    const updated = await Message.updateMany(
+      { _id: { $in: messageIds } },  // match all IDs in array
+      { $set: { deletedForMe: true } }
+    );
+
+    return res.status(200).json({ success: true, updated });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const deletedForEveryone = async (req, res) => {
+  try{
+    const { messageIds } = req.body;
+
+    if(!Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({error: "No message IDs provided"});
+    }
+
+    const updated = await Message.updateMany(
+      { _id: { $in: messageIds } },
+      { $set: { deletedForEveryone: true } }
+    );
+
+    return res.status(200).json({success: true, updated});
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}

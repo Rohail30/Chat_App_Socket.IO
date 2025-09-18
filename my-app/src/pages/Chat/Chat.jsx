@@ -10,8 +10,9 @@ import "./Chat.css";
 
 const Chat = () => {
   
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser, updateUser } = useContext(AuthContext);
   const [ users, setUsers ] = useState([]);
+  const [ user, setUser ] = useState();
   const [selectedUser, setSelectedUser] = useState();
   const [chatID, setChatID] = useState();
   const navigate = useNavigate();
@@ -32,6 +33,20 @@ const Chat = () => {
     };
 
     fetchUsers();
+  }, [currentUser]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await apiRequest.get(`/api/users/${currentUser}`);
+        setUser(res.data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setUser();
+      }
+    };
+
+    fetchUser();
   }, [currentUser]);
 
   
@@ -75,20 +90,27 @@ const Chat = () => {
   };
 
 
+  const handleLogout = async () => {
+    localStorage.removeItem("userId");
+    updateUser(null);
+    navigate('/');
+    window.location.reload();
+  }
+
   return (
     <div className="chatapp-container">
       {/* Left Sidebar */}
       <div className="sidebar chats-list">
-        <h3>Chats</h3>
+        <h3>{user?.username} Chat</h3>
         {chats.map((chat) => (
           <div key={chat.id} className="chat-item">
             <strong>{chat.name}</strong>
             <p>{chat.lastMessage}</p>
           </div>
         ))}
-        <Link to="/Login" style={{ color: "White", textDecoration: "none" }}>
+        <button onClick={handleLogout} style={{ color: "white", textDecoration: "none", backgroundColor: "black" }}>
           Back to Login!
-        </Link>
+        </button>
       </div>
 
       {/* Middle Messages Area */}

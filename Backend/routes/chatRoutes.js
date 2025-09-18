@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import { newChat, getMessages } from "../controllers/chatController.js";
+import { newChat, getMessages, deleteForMe, deletedForEveryone } from "../controllers/chatController.js";
 
 
 
@@ -11,6 +11,10 @@ import { newChat, getMessages } from "../controllers/chatController.js";
 router.post('/new', newChat);
 
 router.get('/getMessages/:id', getMessages);
+
+router.patch('/deleteForMe', deleteForMe);
+
+router.patch('/deleteForAll', deletedForEveryone);
 
 //router.put('/updateStatus/:id', updateMessageStatus);
 

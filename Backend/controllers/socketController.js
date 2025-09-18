@@ -30,23 +30,6 @@ export const handleReadStatus = async ({ chatID, receiver }) => {
   return updatedMessages;
 };
 
-// export const DoubleTick = async ({ sender, receiver }) => {
-
-//   await Message.updateMany(
-//     { receiver: sender, status: "Single_Tick" },
-//     { $set: { status: "Double_Tick" } }
-//   );
-
-//   const updatedMessages = await Message.find({
-//     sender: receiver,
-//     receiver: sender,
-//     status: "Double_Tick",
-//   });
-
-  
-//   console.log("[updatedMessages]",updatedMessages)
-//   return updatedMessages;
-// };
 
 
 export const DoubleTick = async ({ sender, receiver }) => {
@@ -62,7 +45,43 @@ export const DoubleTick = async ({ sender, receiver }) => {
       sender: receiver,
       receiver: sender,
       status: "Double_Tick",
-    }).sort({ date: -1 }).limit(result.modifiedCount); // only the newly updated ones
+    })
+      .sort({ date: -1 })
+      .limit(result.modifiedCount); // only the newly updated ones
+
+    return updatedMessages;
+  }
+
+  return [];
+};
+
+export const deleteForMe = async ({ messages }) => {
+  const updated = await Message.updateMany(
+    { _id: { $in: messages } },
+    { $set: { deletedForMe: true } }
+  );
+
+  if (updated.modifiedCount > 0) {
+    const updatedMessages = await Message.find({
+      _id: { $in: messages }
+    });
+
+    return updatedMessages;
+  }
+
+  return [];
+};
+
+export const deleteForEveryone = async ({ messages }) => {
+  const updated = await Message.updateMany(
+    { _id: { $in: messages } },
+    { $set: { deletedForEveryone: true } }
+  );
+
+  if (updated.modifiedCount > 0) {
+    const updatedMessages = await Message.find({
+      _id: { $in: messages }
+    });
 
     return updatedMessages;
   }
