@@ -405,7 +405,7 @@ function ChatBox({ selectedUser, chatID }) {
         </div>
 
         {/* ---------------- Input Area ---------------- */}
-        {selectedUser && (
+        {/* {selectedUser && (
           <div className="chatbox-input">
             <input
               type="text"
@@ -416,8 +416,8 @@ function ChatBox({ selectedUser, chatID }) {
             />
             <button onClick={() => handleSend(text)}>Send</button>
           </div>
-        )}
-        {/* <ChatInput text={text} setText={setText} handleSend={handleSend} /> */}
+        )} */}
+        <ChatInput text={text} setText={setText} handleSend={handleSend} />
       </div>
     </div>
   );
