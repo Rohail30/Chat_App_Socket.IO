@@ -1,5 +1,6 @@
 import { RiCheckFill } from "react-icons/ri";
 import { PiChecks } from "react-icons/pi";
+import { CiClock1 } from "react-icons/ci";
 
 function MessageItem({ msg, currentUser, selectionMode, selectedMessages, toggleSelectMessage }) {
   return (
@@ -35,6 +36,7 @@ function MessageItem({ msg, currentUser, selectionMode, selectedMessages, toggle
 
           {/* ✅ Status Ticks */}
           <span className="status">
+            {msg.status === "Clock" && <CiClock1 />}
             {msg.status === "Single_Tick" && <RiCheckFill />}
             {msg.status === "Double_Tick" && <PiChecks />}
             {msg.status === "Blue_Tick" && <PiChecks color="blue" />}

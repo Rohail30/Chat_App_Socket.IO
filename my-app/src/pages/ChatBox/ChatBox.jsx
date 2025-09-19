@@ -25,10 +25,32 @@ function ChatBox({ selectedUser, chatID }) {
   const [selectionMode, setSelectionMode] = useState(false); // enables selecting messages
   const [selectedMessages, setSelectedMessages] = useState([]); // selected messages for deletion
   const [deleteOptions, setDeleteOptions] = useState(false); // delete menu toggle
+  const [isTyping, setIsTyping] = useState("");
+  const [lastRoom, setLastRoom] = useState("");
+
+  console.log("[IsTYPING VLAUE]==>",isTyping);
 
   /**
-   * @Type Socket + API
-   * @Desc Fetch previous messages + listen for incoming messages
+   * @Type Socket
+   * @Desc Join chat room with currentUser & selectedUser
+   */
+  useEffect(() => {
+    const roomID = [currentUser, selectedUser].sort().join("_");
+    setLastRoom(roomID);
+
+    if (lastRoom) {
+      socket.emit("leave_room", lastRoom);
+    }
+    socket.emit("joinRoom", roomID);
+
+    return () => {
+      socket.emit("leave_room", roomID); // cleanup on unmount
+    };
+  }, [currentUser, selectedUser, selectedMessages]);
+
+  /**
+   * @Type Socket
+   * @Desc Fetch previous messages + listen for incoming messages "receiveMessage"
    */
   useEffect(() => {
     const fetchMessages = async () => {
@@ -41,22 +63,17 @@ function ChatBox({ selectedUser, chatID }) {
     };
 
     fetchMessages();
-  }, [currentUser, selectedUser, selectedMessages]);
 
-  /**
-   * @Type Socket
-   * @Desc listen for incoming messages "receiveMessage"
-   */
-  useEffect(() => {
-    socket.on("receiveMessage", (msg) => {
+    socket.on("receiveMessage", async (msg) => {
       console.log("[Incoming Message]: ", msg);
       setMessage((prev) => [...prev, msg]);
+      await db.messages.clear();
     });
 
     return () => {
       socket.off("receiveMessage");
     };
-  }, [currentUser]);
+  }, [currentUser, selectedUser, selectedMessages]);
 
   /**
    * @Type Socket
@@ -134,18 +151,6 @@ function ChatBox({ selectedUser, chatID }) {
 
   /**
    * @Type Socket
-   * @Desc Join chat room with currentUser & selectedUser
-   */
-  useEffect(() => {
-    socket.emit("joinRoom", { sender: currentUser, receiver: selectedUser });
-
-    return () => {
-      socket.off("joinRoom");
-    };
-  }, [currentUser, selectedUser, selectedMessages]);
-
-  /**
-   * @Type Socket
    * @Desc Update messages in bulk when server sends "messages_updated"
    */
   useEffect(() => {
@@ -203,6 +208,42 @@ function ChatBox({ selectedUser, chatID }) {
       socket.off("forEveryoneDeleted");
     };
   }, [chatID, selectedUser, currentUser, message, socket]);
+
+  /**
+   * @Type Socket
+   * @Desc typing detection "activity"
+   */
+  useEffect(() => {
+    if (text !== "") {
+      socket.emit("activity", { sender: currentUser, receiver: selectedUser });
+    }
+
+    return () => {
+      socket.off("activity");
+    };
+  }, [text]);
+
+  /**
+   * @Type Socket
+   * @Desc typing detection "activityDetected"
+   */
+  useEffect(() => {
+    socket.on("activityDetected", (det) => {
+      setIsTyping(det);
+      console.log("[set-detection]", det);
+      setTimeout(()=> {
+      setIsTyping("");
+    },2000)
+    });
+
+    setTimeout(()=> {
+      setIsTyping("");
+    },2000)
+
+    return () => {
+      socket.off("activityDetected");
+    };
+  }, [text]);
 
   // ✅ Toggle message selection
   const toggleSelectMessage = (id) => {
@@ -268,19 +309,16 @@ function ChatBox({ selectedUser, chatID }) {
       status: "Clock",
     };
 
-    // Save message to Dexie
-    await db.messages.add(newMessage);
+    if (!socket.connected) {
+      // Save message to Dexie
+      await db.messages.add(newMessage);
 
-    // Fetch all messages
-    let allMessages = await db.messages.toArray();
-    console.log("[All Dexie Messages]", allMessages);
+      // Fetch all messages
+      let allMessages = await db.messages.toArray();
+      console.log("[All Dexie Messages]", allMessages);
 
-    // Clear messages
-    await db.messages.clear();
-
-    // Fetch after clearing
-    const messagesAfterClear = await db.messages.toArray();
-    console.log("[After Dexie Messages]", messagesAfterClear); // []
+      setMessage((prev) => [...prev, newMessage]);
+    }
 
     const data = {
       chat: chatID,
@@ -291,7 +329,6 @@ function ChatBox({ selectedUser, chatID }) {
       status: "Single_Tick",
     };
 
-    setMessage((prev) => [...prev, newMessage]);
     // Remove newMessage from state
     // setMessage((prev) => prev.filter((msg) => msg.date !== newMessage.date));
 
@@ -337,7 +374,7 @@ function ChatBox({ selectedUser, chatID }) {
 
         {/* ---------------- Input Area ---------------- */}
         {selectedUser && (
-          <ChatInput text={text} setText={setText} handleSend={handleSend} />
+          <ChatInput text={text} setText={setText} handleSend={handleSend} isTyping={isTyping}/>
         )}
       </div>
     </div>

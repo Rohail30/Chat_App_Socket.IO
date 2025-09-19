@@ -62,11 +62,14 @@ io.on("connection", (socket) => {
     console.log(`✅ User ${userId} connected with socket ${socket.id}`);
   }
 
-  socket.on("joinRoom", ({ sender, receiver }) => {
-    const roomID = [sender, receiver].sort().join("_");
+  socket.on("joinRoom", (roomID) => {
     socket.join(roomID);
     console.log("Room Joined: ", roomID);
   });
+
+  socket.on("leave_room", (roomId) => {
+  socket.leave(roomId);
+});
 
   socket.on("WhoIsOnline", async ({ sender }) => {
     console.log("[onlineUsers]", onlineUsers);
@@ -81,6 +84,14 @@ io.on("connection", (socket) => {
         const roomId = [sender, userId].sort().join("_");
         io.to(roomId).emit("messages_updated", updatedMessage);
       }
+    }
+  });
+
+  socket.on("activity", async ({ sender,receiver}) => {
+    const roomId = [sender, receiver].sort().join("_");
+    const socketId = onlineUsers.get(receiver);
+    if (socketId) {
+      io.to(roomId).emit("activityDetected", ".");
     }
   });
 
